@@ -1,5 +1,0 @@
-architecture: amd64
-
-actions:
-   - action: overlay
-     source: A
