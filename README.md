@@ -2,6 +2,23 @@
 
 An attempt to rewrite debos in js
 
+### Short Goals
+- [x] Populate YML template with variables
+- [x] NewDebootstrapAction
+- [ ] NewPackAction
+- [ ] UnpackAction
+- [ ] RunAction
+- [ ] NewAptAction
+- [ ] OstreeCommitAction
+- [ ] NewOstreeDeployAction
+- [ ] OverlayAction
+- [ ] ImagePartitionAction
+- [ ] NewFilesystemDeployAction
+- [ ] RawAction
+- [ ] DownloadAction
+- [ ] RecipeAction
+- [ ] TODO: FIXME - should address those
+
 ## Synopsis
 
     debos [options] <recipe file in YAML>
