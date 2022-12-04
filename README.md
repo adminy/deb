@@ -5,17 +5,17 @@ An attempt to rewrite debos in js
 ### Short Goals
 - [x] Populate YML template with variables
 - [x] NewDebootstrapAction
-- [ ] NewPackAction
+- [x] NewPackAction
 - [ ] UnpackAction
 - [ ] RunAction
-- [ ] NewAptAction
+- [x] NewAptAction
 - [ ] OstreeCommitAction
 - [ ] NewOstreeDeployAction
-- [ ] OverlayAction
+- [x] OverlayAction
 - [ ] ImagePartitionAction
 - [ ] NewFilesystemDeployAction
-- [ ] RawAction
-- [ ] DownloadAction
+- [x] RawAction
+- [x] DownloadAction
 - [ ] RecipeAction
 - [ ] TODO: FIXME - should address those
 
