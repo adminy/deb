@@ -1,47 +1,45 @@
-import fs from 'fs'
-import yTemplate from '../yml_template.js'
-import NewDebootstrapAction from './debootstrap.js'
-import NewPackAction from './pack.js'
-import UnpackAction from './unpack.js'
-import RunAction from './run.js'
-import NewAptAction from './apt.js'
-import OstreeCommitAction from './ostree/commit.js'
-import NewOstreeDeployAction from './ostree/deploy.js'
-import OverlayAction from './overlay.js'
-import ImagePartitionAction from './empty.js'
-import NewFilesystemDeployAction from './filesystem_deploy.js'
-import RawAction from './raw.js'
-import DownloadAction from './download.js'
-import RecipeAction from './empty.js'
+import path from 'path'
 
-const todo = {
-	debootstrap: NewDebootstrapAction,
-	pack: NewPackAction,
-	unpack: UnpackAction,
-	run: RunAction,
-	apt: NewAptAction,
-	'ostree-commit': OstreeCommitAction,
-	'ostree-deploy': NewOstreeDeployAction,
-	overlay: OverlayAction,
-	'image-partition': ImagePartitionAction,
-	'filesystem-deploy': NewFilesystemDeployAction,
-	raw: RawAction,
-	download: DownloadAction,
-	recipe: RecipeAction
-}
-
-function Parse(file, printRecipe, dump, templateVars) {
-	const data = fs.readFileSync(file).toString()
-	const {architecture, actions} = yTemplate(data, {sector: s => s * 512, ...templateVars})
-	if (printRecipe || dump) console.log(`Recipe '${file}':`)
-	printRecipe && console.log(data)
-	dump && console.log(architecture, actions)
-	if (!architecture) return console.error('Recipe file must have "architecture" property')
-	if (!actions) return console.error('Recipe file must have at least one action')
+export default recipe => {
+	const {Recipe, Variables, Actions, templateVars, LogStart} = recipe
 	return {
-		Actions: actions.map(entry => todo[entry.action]?.(entry) || console.error('Unknown action:', entry)),
-		Architecture: architecture
+		Verify: context => {
+			if (!Recipe) return console.error('"recipe" property can\'t be empty')
+			recipe.context = context
+			let file = Recipe
+			if (path.isAbsolute(file)) {
+				file = path.join(context.RecipeDir, Recipe)
+			}
+			context.RecipeDir = path.dirname(file)
+
+			// Initialise template vars
+			recipe.templateVars = {}
+			recipe.templateVars.architecture = context.Architecture
+		
+			// Add Variables to template vars
+			for (const key in Variables) {
+				templateVars[key] = Variables[key]
+			}
+
+			Actions.Parse(file, context.PrintRecipe, context.Verbose, templateVars)
+		
+			if (context.Architecture != Actions.Architecture)
+				return console.error('Expect architecture', context.Architecture, 'but got', Actions.Architecture)
+
+			Actions.Actions.map(action => action.Verify(context))
+		},
+		PreMachine: (context, m, args) => {
+			// TODO: check args?
+			m.AddVolume(context.RecipeDir)
+			Actions.Actions.map(action => action.PreMachine(context, m, args))
+		},
+		PreNoMachine: context => Actions.Actions.map(action => action.PreNoMachine(context)),
+		Run: context => {
+			// LogStart()
+			Actions.Actions.map(action => action.Run(context))
+		},
+		Cleanup: context => Actions.Actions.map(action => action.Cleanup(context)),
+		PostMachine: context => Actions.Actions.map(action => action.PostMachine(context)),
+		PostMachineCleanup: context => Actions.Actions.map(action => action.PostMachineCleanup(context))
 	}
 }
-
-export default Parse

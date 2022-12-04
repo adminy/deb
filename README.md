@@ -12,11 +12,16 @@ An attempt to rewrite debos in js
 - [x] OstreeCommitAction
 - [x] NewOstreeDeployAction
 - [x] OverlayAction
-- [ ] ImagePartitionAction
+- [x] ImagePartitionAction
 - [x] NewFilesystemDeployAction
 - [x] RawAction
 - [x] DownloadAction
-- [ ] RecipeAction
+- [x] RecipeAction
+- [ ] Debos
+- [ ] Find lib alternative for mount in JS
+- [ ] Find lib alternative for chroot in JS
+- [ ] Find lib alternative for loopdevice in JS
+- [ ] Refactor the code, to be less encapsulated
 - [ ] TODO: FIXME - should address those
 
 ## Synopsis

@@ -4,7 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import {tmpdir} from 'os'
 import debos from './debos.js'
-import Parse from './actions/recipe.js'
+import Parse from './actions/index.js'
 
 const checkForHost = ([k, v]) => {
 	const isLocal = ['localhost', '127.0.0.1', '::1'].find(ip => v.includes(ip))
