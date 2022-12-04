@@ -6,14 +6,14 @@ An attempt to rewrite debos in js
 - [x] Populate YML template with variables
 - [x] NewDebootstrapAction
 - [x] NewPackAction
-- [ ] UnpackAction
-- [ ] RunAction
+- [x] UnpackAction
+- [x] RunAction
 - [x] NewAptAction
-- [ ] OstreeCommitAction
-- [ ] NewOstreeDeployAction
+- [x] OstreeCommitAction
+- [x] NewOstreeDeployAction
 - [x] OverlayAction
 - [ ] ImagePartitionAction
-- [ ] NewFilesystemDeployAction
+- [x] NewFilesystemDeployAction
 - [x] RawAction
 - [x] DownloadAction
 - [ ] RecipeAction
