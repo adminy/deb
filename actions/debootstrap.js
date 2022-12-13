@@ -30,9 +30,10 @@ function NewDebootstrapAction(entry) {
 		d.Components && cmdline.push('--components=' + d.Components.join(','))
 		const c = debos.NewChrootCommandForContext(context)
 		// Can't use nspawn for debootstrap as it wants to create device nodes
-		c.ChrootMethod = debos.CHROOT_METHOD_CHROOT	
+		c.ChrootMethod = 'CHROOT_METHOD_CHROOT'
 		const log = path.join(context.Rootdir, 'debootstrap/debootstrap.log')
-		c.Run("Debootstrap (stage 2)", ...cmdline) && debos.Command.Run("debootstrap.log", "cat", log)
+		c.Run("Debootstrap (stage 2)", ...cmdline)
+		debos.Command.Run("debootstrap.log", "cat", log)
 	}
 	d.Run = context => {
 		// d.LogStart() // TODO: FIXME

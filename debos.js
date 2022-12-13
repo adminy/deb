@@ -1,7 +1,7 @@
+import NewChrootCommandForContext from './commands'
 export default {
 	Success: 1,
 	Failure: 0,
-	Command: {Run: () => {}},
-	CHROOT_METHOD_CHROOT: '?',
-	NewChrootCommandForContext: () => ({Run: () => {}})
+	Command: NewChrootCommandForContext({}), // context is in index.js
+	NewChrootCommandForContext
 }

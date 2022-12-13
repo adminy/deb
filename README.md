@@ -17,7 +17,9 @@ An attempt to rewrite debos in js
 - [x] RawAction
 - [x] DownloadAction
 - [x] RecipeAction
-- [ ] Debos
+- [x] Debos
+- [x] Commands
+- [ ] Find lib alternative for OsTree in JS
 - [ ] Find lib alternative for mount in JS
 - [ ] Find lib alternative for chroot in JS
 - [ ] Find lib alternative for loopdevice in JS
