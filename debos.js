@@ -1,7 +1,11 @@
-import NewChrootCommandForContext from './commands'
-export default {
+import newChroot from './commands.js'
+
+const debos = {
 	Success: 1,
 	Failure: 0,
-	Command: NewChrootCommandForContext({}), // context is in index.js
-	NewChrootCommandForContext
+	NewChrootCommandForContext: (...args) => {
+		return debos.Command = newChroot(...args)
+	}
 }
+
+export default debos

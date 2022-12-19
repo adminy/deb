@@ -14,7 +14,7 @@ function OstreeCommitAction({
 		emptyDir,
 		Run: context => {
 			// LogStart()
-			const repoPath = path.join(context.Artifactdir, Repository)		
+			const repoPath = path.join(context.artifactDir, Repository)		
 			emptyDir(path.join(context.Rootdir, 'dev'))		
 			const repo = otbuiltin.OpenRepo(repoPath)
 			repo.PrepareTransaction()

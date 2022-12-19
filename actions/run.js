@@ -36,7 +36,7 @@ export default ({Chroot, PostProcess, Script, Command, Label, LogStart}) => {
 		cmdline.push('sh', '-c', ...cmdline)
 		if (!Chroot) {
 			cmd.AddEnvKey('RECIPEDIR', context.RecipeDir)
-			cmd.AddEnvKey('ARTIFACTDIR', context.Artifactdir)
+			cmd.AddEnvKey('ARTIFACTDIR', context.artifactDir)
 		}
 		if (!PostProcess) {
 			if (!Chroot) {

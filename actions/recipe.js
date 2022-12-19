@@ -1,27 +1,28 @@
 import path from 'path'
-
+import Parse from './index.js'
 export default recipe => {
-	const {Recipe, Variables, Actions, templateVars, LogStart} = recipe
+	var {recipe, Variables, Actions, templateVars, LogStart} = recipe
 	return {
 		Verify: context => {
-			if (!Recipe) return console.error('"recipe" property can\'t be empty')
-			recipe.context = context
-			let file = Recipe
+			if (!recipe) return console.error('"recipe" property can\'t be empty')
+			// recipe.context = context
+			let file = recipe
+			console.log('file', file, 'what about the main file?') // TODO ...
 			if (path.isAbsolute(file)) {
-				file = path.join(context.RecipeDir, Recipe)
+				file = path.join(context.recipeDir, recipe)
 			}
-			context.RecipeDir = path.dirname(file)
+			context.recipeDir = path.dirname(file)
 
 			// Initialise template vars
-			recipe.templateVars = {}
-			recipe.templateVars.architecture = context.Architecture
+			// recipe.templateVars = {}
+			// recipe.templateVars.architecture = context.Architecture
 		
 			// Add Variables to template vars
 			for (const key in Variables) {
 				templateVars[key] = Variables[key]
 			}
 
-			Actions.Parse(file, context.PrintRecipe, context.Verbose, templateVars)
+			Parse(file, context.printRecipe, context.verbose, templateVars)
 		
 			if (context.Architecture != Actions.Architecture)
 				return console.error('Expect architecture', context.Architecture, 'but got', Actions.Architecture)
@@ -30,7 +31,7 @@ export default recipe => {
 		},
 		PreMachine: (context, m, args) => {
 			// TODO: check args?
-			m.AddVolume(context.RecipeDir)
+			m.AddVolume(context.recipeDir)
 			Actions.Actions.map(action => action.PreMachine(context, m, args))
 		},
 		PreNoMachine: context => Actions.Actions.map(action => action.PreNoMachine(context)),

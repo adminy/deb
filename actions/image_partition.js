@@ -7,8 +7,9 @@ import path from 'path'
 
 export default function ImagePartitionAction(imgPart) {
 	const {
-		ImageName, ImageSize, PartitionType, DiskID, GptGap /** gpt_gap */,  Partitions /** mkPart() */, Mountpoints /** mkMountPoint */, size, loopDev: {	number, flags }, usingLoop, LogStart
+		ImageName, ImageSize, PartitionType, DiskID, GptGap /** gpt_gap */,  Partitions /** mkPart() */, Mountpoints /** mkMountPoint */, size, loopDev, usingLoop, LogStart
 	} = imgPart
+	const {	number, flags } = loopDev || {}
 
 	const lockImage = context => {
 		fd = os.Open(context.Image)
@@ -65,7 +66,7 @@ export default function ImagePartitionAction(imgPart) {
 	)
 
 	const PreMachine = (context, m, args) => {
-		const imagePath = path.join(context.Artifactdir, ImageName)
+		const imagePath = path.join(context.artifactDir, ImageName)
 		const image = m.CreateImage(imagePath, size)
 		context.Image = image
 		args.push('--internal-image', image)
@@ -129,8 +130,8 @@ export default function ImagePartitionAction(imgPart) {
 	}
 
 	const PreNoMachine = context => {
-		const imagePath = path.join(context.Artifactdir, ImageName)
-		const img = os.OpenFile(imagePath, os.O_WRONLY|os.O_CREATE, 0666)
+		const imagePath = path.join(context.artifactDir, ImageName)
+		const img = os.OpenFile(imagePath, os.O_WRONLY|os.O_CREATE, 0o666)
 		img.Truncate(i.size) // resize
 		img.Close()
 		imgPart.loopDev = losetup.Attach(imagePath, 0, false)
@@ -215,7 +216,7 @@ export default function ImagePartitionAction(imgPart) {
 		}
 	}
 	const PostMachineCleanup = context => {
-		const image = path.join(context.Artifactdir, ImageName)
+		const image = path.join(context.artifactDir, ImageName)
 		// Remove the image in case of any action failure
 		context.State != debos.Success && fs.existsSync(image) && fs.unlinkSync(image)
 	}

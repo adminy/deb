@@ -19,7 +19,7 @@ function NewPackAction({Compression='gz', File='', LogStart}) {
 		},
 		Run: context => {
 				// LogStart()
-				const outfile = path.join(context.Artifactdir, File)			
+				const outfile = path.join(context.artifactDir, File)			
 				const tarOpt = 'cf' + tarOpts[Compression]
 				console.log('Compressing to', outfile)
 				return debos.Command.Run('Packing', 'tar', tarOpt, outfile,

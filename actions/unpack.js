@@ -9,7 +9,7 @@ export default ({Compression, Origin, File, LogStart}) => ({
 	},
 	Run: context => {
 		// LogStart()
-		const origin = Origin && context.Origin(Origin) || context.Artifactdir	
+		const origin = Origin && context.Origin(Origin) || context.artifactDir	
 		const infile = debos.RestrictedPath(origin, File)
 		const archive = debos.NewArchive(infile)
 		Compression && archive.AddOption('tarcompression', Compression)	

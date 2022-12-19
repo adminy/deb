@@ -36,7 +36,7 @@ function OstreeDeployAction({
 				context.Rootdir = context.ImageMntDir
 				context.Origins.filesystem = context.ImageMntDir
 			}
-			const repoPath = 'file://' + path.join(context.Artifactdir, Repository)
+			const repoPath = 'file://' + path.join(context.artifactDir, Repository)
 			const sysroot = ostree.NewSysroot(context.Rootdir)
 			sysroot.InitializeFS()
 			sysroot.InitOsname(ot.Os, nil)

@@ -17,26 +17,26 @@ const checkForHost = ([k, v]) => {
 }
 
 const options = yargs(hideBin(process.argv))
-	.option('Backend', {
+	.option('backend', {
 		aliases: ['-fakemachine-backend', 'b'],
 		describe: 'Fakemachine backend to use',
 		choices: ['kvm', 'qemu', 'uml', 'auto'],
 		default: 'auto'
 	})
-	.option('ArtifactDir', { alias: '-artifactdir', describe: 'Directory for packed archives and ostree repositories', default: process.cwd()})
-	.option('InternalImage', {alias: '-internal-image', hidden: true})
-	.option('TemplateVars', {aliases: ['t', '-template-var'], describe: 'Template variables (use -t VARIABLE:VALUE syntax)'}).array()
-	.option('DebugShell', {alias: '-debug-shell', describe: 'Fall into interactive shell on error', default: false}).boolean()
-	.option('Shell', {aliases: ['s', '-shell'], describe: 'Redefine interactive shell binary', default: '/bin/bash'})
-	.option('ScratchSize', {alias: ['-scratchsize'], describe: 'Size of disk backed scratch space'}).number()
-	.option('CPUs', {aliases: ['c', '-cpus'], describe: 'Number of CPUs to use for build VM', default: 2}).number()
-	.option('Memory', {aliases: ['m', '-memory'], describe: 'Amount of memory for build VM in Megabytes (MB)', default: 2 * 1024}).number()
-	.option('ShowBoot', {alias: '-show-boot', describe: 'Show boot/console messages from the fake machine'}).boolean()
-	.option('EnvironVars', {aliases: ['e', '-environ-var'], describe: 'Environment variables (use -e VARIABLE:VALUE syntax)'}).array()
-	.option('Verbose', {aliases: ['v', '-verbose'], describe: 'Verbose output', default: true}).boolean()
-	.option('PrintRecipe', {alias: '-print-recipe', describe: 'Print final recipe', default: false}).boolean()
-	.option('DryRun', {alias: '-dry-run', describe: 'Compose final recipe to build but without any real work started', default: false}).boolean()
-	.option('DisableFakeMachine', {alias: '-disable-fakemachine', describe: 'Do not use fakemachine.', default: true}).boolean()
+	.option('artifactDir', { describe: 'Directory for packed archives and ostree repositories', default: process.cwd()})
+	.option('internalImage', {hidden: true})
+	.option('templateVars', {alias: 't', describe: 'Template variables (use -t VARIABLE:VALUE syntax)', default: []})
+	.option('debugShell', {describe: 'Fall into interactive shell on error', default: false})
+	.option('shell', {alias: 's', describe: 'Redefine interactive shell binary', default: '/bin/bash'})
+	.option('scratchSize', {describe: 'Size of disk backed scratch space'})
+	.option('cpus', {alias: 'c', describe: 'Number of CPUs to use for build VM', default: 2})
+	.option('memory', {alias: 'm', describe: 'Amount of memory for build VM in Megabytes (MB)', default: 2 * 1024})
+	.option('showBoot', {describe: 'Show boot/console messages from the fake machine'})
+	.option('environVars', {alias: 'e', describe: 'Environment variables (use -e VARIABLE:VALUE syntax)'})
+	.option('verbose', {alias: 'v', describe: 'Verbose output', default: true})
+	.option('printRecipe', {describe: 'Print final recipe', default: false})
+	.option('dryRun', {describe: 'Compose final recipe to build but without any real work started', default: false})
+	.option('disableFakeMachine', {describe: 'Do not use fakemachine.', default: true})
 	.argv
 const context = {}
 
@@ -49,24 +49,24 @@ const main = () => {
 
 	if (!options._.length) return console.error('No recipe given!')
 
-	if (options.DisableFakeMachine && options.Backend != 'auto')
+	if (options.disableFakeMachine && options.backend != 'auto')
 		return console.error('--disable-fakemachine and --fakemachine-backend are mutually exclusive')
 
 	// Set interactive shell binary only if '--debug-shell' options passed
-	if (options.DebugShell) {
-		context.DebugShell = options.Shell
+	if (options.debugShell) {
+		context.debugShell = options.shell
 	}
 
-	if (options.PrintRecipe) {
-		context.PrintRecipe = options.PrintRecipe
+	if (options.printRecipe) {
+		context.printRecipe = options.printRecipe
 	}
 
-	if (options.Verbose) {
-		context.Verbose = options.Verbose
+	if (options.verbose) {
+		context.verbose = options.verbose
 	}
 
 	const file = path.resolve(...options._)
-	const r = Parse(file, options.PrintRecipe, options.Verbose, options.TemplateVars)
+	const r = Parse(file, options.printRecipe, options.verbose, options.templateVars)
 
 	/* If fakemachine is used the outer fake machine will never use the
 		* scratchdir, so just set it to /scratch as a dummy to prevent the
@@ -75,14 +75,14 @@ const main = () => {
 
 	let runInFakeMachine = true
 	let m;
-	if (options.DisableFakeMachine || process.env.IN_FAKE_MACHINE) {
+	if (options.disableFakeMachine || process.env.IN_FAKE_MACHINE) {
 		runInFakeMachine = false
 	} else {
 		// attempt to create a fakemachine
-		m = fakemachine.NewMachineWithBackend(options.Backend)
+		m = fakemachine.NewMachineWithBackend(options.backend)
 		// fallback to running on the host unless the user has chosen a specific backend
 		runInFakeMachine = false
-		if (!m || options.Backend != 'auto') return console.error('error creating fakemachine')
+		if (!m || options.backend != 'auto') return console.error('error creating fakemachine')
 	}
 
 	// if running on the host create a scratchdir
@@ -92,16 +92,16 @@ const main = () => {
 	}
 
 	context.Rootdir = path.join(context.Scratchdir, 'root')
-	context.Image = options.InternalImage
+	context.Image = options.internalImage
 	context.RecipeDir = path.dirname(file)
-	context.Artifactdir = options.ArtifactDir
-	if (!context.Artifactdir) {
-		context.Artifactdir = path.resolve(process.cwd())
+	context.artifactDir = options.artifactDir
+	if (!context.artifactDir) {
+		context.artifactDir = path.resolve(process.cwd())
 	}
 
 	// Initialise origins map
 	context.Origins = {
-		artifacts: context.Artifactdir,
+		artifacts: context.artifactDir,
 		filesystem: context.Rootdir,
 		recipe: context.RecipeDir
 	}
@@ -137,20 +137,20 @@ const main = () => {
 
 	everyAction(action => action.Verify(context))
 
-	if (options.DryRun) return console.log('==== Recipe done (Dry run) ====')
+	if (options.dryRun) return console.log('==== Recipe done (Dry run) ====')
 	if (runInFakeMachine) {
 		const args = []
-		m.SetMemory(options.Memory)
-		m.SetNumCPUs(options.CPUs)
-		options.ScratchSize && m.SetScratch(options.ScratchSize, "")
-		m.SetShowBoot(options.ShowBoot)
+		m.SetMemory(options.memory)
+		m.SetNumCPUs(options.cpus)
+		options.scratchSize && m.SetScratch(options.scratchSize, "")
+		m.SetShowBoot(options.showBoot)
 		// Puts in a format that is compatible with output of os.Environ()
 		const envsExist = Object.keys(context.EnvironVars).length
 		envsExist && m.SetEnviron(Object.entries(context.EnvironVars)
 			.filter(checkForHost).map(([k, v]) => `${k}="${v}"`).join('\n'))
-		m.AddVolume(context.Artifactdir)
-		args.push('--artifactdir', context.Artifactdir)
-		for (const [k, v] of Object.entries(options.TemplateVars)) {
+		m.AddVolume(context.artifactDir)
+		args.push('--artifactdir', context.artifactDir)
+		for (const [k, v] of Object.entries(options.templateVars)) {
 			args.push('--template-var', `${k}:"${v}"`)
 		}
 		for (const [k, v] of Object.entries(options.EnvironVars)) {
@@ -158,7 +158,7 @@ const main = () => {
 		}
 		m.AddVolume(context.RecipeDir)
 		args.push(file)
-		options.DebugShell && args.push('--debug-shell', '--shell', options.Shell)
+		options.debugShell && args.push('--debug-shell', '--shell', options.shell)
 		everyAction(action => action.PreMachine(context, m, args))
 		m.RunInMachineWithArgs(args)
 		everyAction(action => action.PostMachine(context))

@@ -16,7 +16,7 @@ const assign = text => {
 }
 
 function template(text, ymlVars={}) {
-	const mapKeyVal = ({key, val}={}) => key && `${key}: "${ymlVars[key] = val}"`
+	const mapKeyVal = ({key, val}={}) => key && `${key}: "${process.env[key] = ymlVars[key] = val}"`
 	const checkVars = key => ymlVars[key] && `"${ymlVars[key]}"`
 
 	const pattern = new RegExp('\{\{(.*?)\}\}', 'g')
@@ -24,6 +24,7 @@ function template(text, ymlVars={}) {
 		const equal = key.startsWith('-') && key.endsWith('-') && mapKeyVal(assign(key))
 		return equal || checkVars(key.trim().slice(1)) || console.error('no_var:', key) || ''
 	})
+	console.log('VARS:', ymlVars)
 	return YAML.parse(yml)
 }
 

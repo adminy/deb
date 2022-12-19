@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-function NewFilesystemDeployAction({
+export default function NewFilesystemDeployAction({
 	SetupFSTab=true, // yml['setup-fstab']
 	SetupKernelCmdline=true, // yml['setup-kernel-cmdline']
 	AppendKernelCmdline, //yml['append-kernel-cmdline']
