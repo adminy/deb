@@ -39,8 +39,8 @@ function Parse(file, printRecipe, dump, templateVars) {
 	if (!architecture) return console.error('Recipe file must have "architecture" property')
 	if (!actions) return console.error('Recipe file must have at least one action')
 	return {
-		Actions: actions.map(entry => todo[entry.action]?.(entry) || console.error('Unknown action:', entry)),
-		Architecture: architecture
+		actions: actions.map(entry => todo[entry.action]?.(entry) || console.error('Unknown action:', entry)),
+		architecture: architecture
 	}
 }
 

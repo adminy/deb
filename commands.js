@@ -3,24 +3,24 @@ import fs from 'fs'
 import crypto from 'crypto'
 import cp from 'child_process'
 // type ChrootEnterMethod int
-const NewChrootCommandForContext = context => {
+const newChrootCommandForContext = context => {
 	const c = {
-		Architecture: context.Architecture,         // Architecture of the chroot, nil if same as host
-		Dir: '',    		        				// Working dir to run command in
-		Chroot: context.Rootdir,         		    // Run in the chroot at path
-		ChrootMethod: 'CHROOT_METHOD_NSPAWN', 		// Method to enter the chroot
+		architecture: context.architecture,         // Architecture of the chroot, nil if same as host
+		dir: '',    		        				// Working dir to run command in
+		chroot: context.rootdir,         		    // Run in the chroot at path
+		chrootMethod: 'CHROOT_METHOD_NSPAWN', 		// Method to enter the chroot
 		bindMounts: [], 							// Items to bind mount
 		extraEnv: [], 								// Extra environment variables to set
 	}
 
-	c.AddEnv = env => c.extraEnv.push(env)
-	c.AddEnvKey = (key, value) => c.extraEnv.push(`${key}=${value}`)
-	c.AddBindMount = (source, target) => c.bindMounts.push(target ? `${source}:${target}` : source)
+	c.addEnv = env => c.extraEnv.push(env)
+	c.addEnvKey = (key, value) => c.extraEnv.push(`${key}=${value}`)
+	c.addBindMount = (source, target) => c.bindMounts.push(target ? `${source}:${target}` : source)
 	c.saveResolvConf = () => {
 		const hostconf = '/etc/resolv.conf'
-		const chrootedconf = path.join(c.Chroot, hostconf)
+		const chrootedconf = path.join(c.chroot, hostconf)
 		const savedconf = chrootedconf + '.debos'
-		if (c.ChrootMethod == 'CHROOT_METHOD_NONE') return null
+		if (c.chrootMethod == 'CHROOT_METHOD_NONE') return null
 		// There may not be an existing resolv.conf
 		!fs.existsSync(chrootedconf) && fs.renameSync(chrootedconf, savedconf)
 	
@@ -32,9 +32,9 @@ const NewChrootCommandForContext = context => {
 	}
 	c.restoreResolvConf = sum => {
 		const hostconf = '/etc/resolv.conf'
-		const chrootedconf = path.join(cmd.Chroot, hostconf)
+		const chrootedconf = path.join(cmd.chroot, hostconf)
 		const savedconf = chrootedconf + '.debos'
-		if (c.ChrootMethod == 'CHROOT_METHOD_NONE') return null
+		if (c.chrootMethod == 'CHROOT_METHOD_NONE') return null
 		// resolv.conf was removed during the command call
 		// Nothing to do with it -- file has been changed anyway
 		if (fs.existsSync(chrootedconf)) {
@@ -51,7 +51,7 @@ const NewChrootCommandForContext = context => {
 	}
 	const newQemuHelper = c => {
 		const q = { qemusrc: '', qemutarget: ''}
-		if (!c.Chroot || !c.Architecture) return q
+		if (!c.chroot || !c.architecture) return q
 		const archs = {
 			armhf: () => q.qemusrc = '/usr/bin/qemu-arm-static',
 			armel: () => q.qemusrc = '/usr/bin/qemu-arm-static',
@@ -64,20 +64,20 @@ const NewChrootCommandForContext = context => {
 			amd64: () => {},
 			i386: () => {}
 		}
-		archs[c.Architecture]()
-		if (q.qemusrc) q.qemutarget = path.join(c.Chroot, q.qemusrc)
-		q.Setup = () => q.qemusrc && fs.copyFileSync(q.qemusrc, q.qemutarget, {mode: 0o755})
-		q.Cleanup = () => q.qemusrc && fs.unlinkSync(q.qemutarget)
+		archs[c.architecture]()
+		if (q.qemusrc) q.qemutarget = path.join(c.chroot, q.qemusrc)
+		q.setup = () => q.qemusrc && fs.copyFileSync(q.qemusrc, q.qemutarget, {mode: 0o755})
+		q.cleanup = () => q.qemusrc && fs.unlinkSync(q.qemutarget)
 		return q
 	}
 
-	c.Run = (label, cmdline) => {
+	c.run = (label, cmdline) => {
 		const q = newQemuHelper(c)
-		q.Setup()
+		q.setup()
 		const options = []
 		const optActions = {
 			CHROOT_METHOD_NONE: () => options.push(...cmdline),
-			CHROOT_METHOD_CHROOT: () => options.push('chroot', c.Chroot, ...cmdline),
+			CHROOT_METHOD_CHROOT: () => options.push('chroot', c.chroot, ...cmdline),
 			// We use own resolv.conf handling
 			CHROOT_METHOD_NSPAWN: () => options.push(
 				'systemd-nspawn', '-q',
@@ -85,24 +85,24 @@ const NewChrootCommandForContext = context => {
 				'--register=no', '--keep-unit',
 				...c.extraEnv.map(e => ['--setenv', e]).flat(),
 				...c.bindMounts.map(b => ['--bind', b]).flat(),
-				'-D', c.Chroot,
+				'-D', c.chroot,
 				...cmdline
 			)
 
 
 		}
-		optActions[c.ChrootMethodNone]()
+		optActions[c.chrootMethodNone]()
 		const env = process.env
-		if (c.extraEnv.length && c.ChrootMethod !== 'CHROOT_METHOD_NSPAWN') {
+		if (c.extraEnv.length && c.chrootMethod !== 'CHROOT_METHOD_NSPAWN') {
 			for (const [k, v] of c.extraEnv.map(e => e.split('='))) {
 				env[k] = v
 			}
 		}
 		// Disable services start/stop for commands running in chroot
-		if (c.ChrootMethod !== 'CHROOT_METHOD_NONE') {
-			const services = ServiceHelper(c.Chroot)
-			services.Deny()
-			// differ services.Allow()
+		if (c.chrootMethod !== 'CHROOT_METHOD_NONE') {
+			const services = ServiceHelper(c.chroot)
+			services.deny()
+			// differ services.allow()
 		}
 		// Save the original resolv.conf and copy version from host
 		const resolvsum = c.saveResolvConf()
@@ -114,18 +114,18 @@ const NewChrootCommandForContext = context => {
 		// w = newCommandWrapper(label) // becomes stdout & stderr
 		// Restore the original resolv.conf if not changed
 		c.restoreResolvConf(resolvsum)
-		q.Cleanup()
+		q.cleanup()
 	}
-	Object.entries(context.EnvironVars).map(([k, v]) => c.AddEnv(`${k}=${v}`))
-	if (context.Image) {
-		c.AddBindMount(path.resolve(context.Image), '')
-		for (const p of ImagePartitions) {
-			const devPath = path.resolve(p.DevicePath)
-			devPath && c.AddBindMount(devPath, '')
+	Object.entries(context.environVars).map(([k, v]) => c.addEnv(`${k}=${v}`))
+	if (context.image) {
+		c.addBindMount(path.resolve(context.image), '')
+		for (const p of imagePartitions) {
+			const devPath = path.resolve(p.devicePath)
+			devPath && c.addBindMount(devPath, '')
 		}
-		c.AddBindMount('/dev/disk', '')	
+		c.addBindMount('/dev/disk', '')	
 	}
 	return c
 }
-export default NewChrootCommandForContext
-// commandWrapper contains NewChrootCommandForContext
+export default newChrootCommandForContext
+// commandWrapper contains newChrootCommandForContext

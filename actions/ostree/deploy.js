@@ -18,68 +18,68 @@ function OstreeDeployAction({
 }) {
 
 	const setupFSTab = (deployment, context)  => {
-		const deploymentDir = `ostree/deploy/${deployment.Osname()}/deploy/${deployment.Csum()}.${deployment.Deployserial()}`
-		const etcDir = path.join(context.Rootdir, deploymentDir, 'etc')
+		const deploymentDir = `ostree/deploy/${deployment.osname()}/deploy/${deployment.csum()}.${deployment.deployserial()}`
+		const etcDir = path.join(context.rootdir, deploymentDir, 'etc')
 		fs.mkdirSync(etcDir, {mode: 0o755})
-		fs.writeFileSync(path.join(etcDir, 'fstab'), context.ImageFSTab)
+		fs.writeFileSync(path.join(etcDir, 'fstab'), context.imageFSTab)
 	}
 
 	return {
 		setupFSTab,
-		Run: context => {
+		run: context => {
 			// LogStart()
 
 			// This is to handle cases there we didn't partition an image
-			if (context.ImageMntDir) {
+			if (context.imageMntDir) {
 				// First deploy the current rootdir to the image so it can seed e.g. bootloader configuration
-				debos.Command.Run('Deploy to image', 'cp', '-a', context.Rootdir+'/.', context.ImageMntDir)
-				context.Rootdir = context.ImageMntDir
-				context.Origins.filesystem = context.ImageMntDir
+				debos.command.run('Deploy to image', 'cp', '-a', context.rootdir+'/.', context.imageMntDir)
+				context.rootdir = context.imageMntDir
+				context.origins.filesystem = context.imageMntDir
 			}
 			const repoPath = 'file://' + path.join(context.artifactDir, Repository)
-			const sysroot = ostree.NewSysroot(context.Rootdir)
-			sysroot.InitializeFS()
-			sysroot.InitOsname(ot.Os, nil)
+			const sysroot = ostree.newSysroot(context.rootdir)
+			sysroot.initializeFS()
+			sysroot.initOsname(ot.os, nil)
 			// HACK: Getting the repository form the sysroot gets ostree confused on whether
 			// it should configure /etc/ostree or the repo configuration, so reopen by hand
-			// const dstRepo = sysroot.Repo(nil)
-			const dstRepo = ostree.OpenRepo(path.join(context.Rootdir, 'ostree/repo'))
+			// const dstRepo = sysroot.repo(nil)
+			const dstRepo = ostree.openRepo(path.join(context.rootdir, 'ostree/repo'))
 			// FIXME: add support for gpg signing commits so this is no longer needed
-			const opts = ostree.RemoteOptions = {
-				NoGpgVerify: true,
+			const opts = ostree.remoteOptions = {
+				NoGpgverify: true,
 				TlsClientCertPath: TlsClientCertPath,
 				TlsClientKeyPath:  TlsClientKeyPath,
 				CollectionId:      CollectionID,
 			}
-			dstRepo.RemoteAdd('origin', ot.RemoteRepository, opts)
-			const options = ostree.PullOptions
-			options.OverrideRemoteName = 'origin'
-			options.Refs = Branch
+			dstRepo.remoteAdd('origin', ot.remoteRepository, opts)
+			const options = ostree.pullOptions
+			options.overrideRemoteName = 'origin'
+			options.refs = Branch
 
-			dstRepo.PullWithOptions(repoPath, options)
+			dstRepo.pullWithOptions(repoPath, options)
 			// Required by ostree to make sure a bunch of information was pulled in
-			sysroot.Load()
-			revision = dstRepo.ResolveRev(ot.Branch, false)
+			sysroot.load()
+			revision = dstRepo.resolveRev(ot.branch, false)
 			const kargs = []
-			SetupKernelCmdline && kargs.push(context.ImageKernelRoot)
+			SetupKernelCmdline && kargs.push(context.imageKernelRoot)
 
-			AppendKernelCmdline && kargs.push(...AppendKernelCmdline.split(' '))
+			AppendKernelCmdline && kargs.push(...appendKernelCmdline.split(' '))
 
-			const origin = sysroot.OriginNewFromRefspec('origin:' + Branch)
-			const deployment = sysroot.DeployTree(ot.Os, revision, origin, null, kargs)
+			const origin = sysroot.originNewFromRefspec('origin:' + Branch)
+			const deployment = sysroot.deployTree(ot.os, revision, origin, null, kargs)
 
 			SetupFSTab && setupFSTab(deployment, context)
 		
-			sysroot.SimpleWriteDeployment(ot.Os, deployment, null, 0)
+			sysroot.simpleWriteDeployment(ot.os, deployment, null, 0)
 			/* libostree keeps some information, like repo lock file descriptor, in
 			* thread specific variables. As GC can be run from another thread, it
 			* may not been able to access this, preventing to free them correctly.
 			* To prevent this, explicitly dereference libostree objects. */
-			dstRepo.Unref()
-			sysroot.Unref()
+			dstRepo.unref()
+			sysroot.unref()
 		},
-		PreNoMachine: () => {},
-		PostMachine: () => {},
+		preNoMachine: () => {},
+		postMachine: () => {},
 	}
 }
 

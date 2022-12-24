@@ -16,23 +16,23 @@ export default function({Origin, Offset, Source, Path, Partition, LogStart}) {
 		Path = ''
 	}
 	return {
-		Verify: () => (!Origin || !Source) && console.error("'origin' and 'source' properties can't be empty"),
-		Run: context => {
+		verify: () => (!Origin || !Source) && console.error("'origin' and 'source' properties can't be empty"),
+		run: context => {
 			// LogStart()
-			const [origin, found] = context.Origin(Origin)
+			const [origin, found] = context.origin(Origin)
 			if (!found) return console.error(`Origin ${Origin} doesn't exist`)
 			const content = fs.readFileSync(path.join(Source, origin))
 			let devicePath = ''
 			if (Partition) {
-				for (const p of context.ImagePartitions) {
-					if (p.Name == Partition) {
-						devicePath = p.DevicePath
+				for (const p of context.imagePartitions) {
+					if (p.name == Partition) {
+						devicePath = p.devicePath
 						break
 					}
 				}
 				if (!devicePath) return console.error(`Failed to find partition named ${Partition}`)
 			} else {
-				devicePath = context.Image
+				devicePath = context.image
 			}
 			const off = Buffer.from(Offset)
 			const offset = (off.readUInt32BE(0) << 8) + off.readUInt32BE(4)
@@ -41,8 +41,8 @@ export default function({Origin, Offset, Source, Path, Partition, LogStart}) {
 			fs.fdatasyncSync(target)
 			fs.closeSync(target)
 		},
-		PreNoMachine: () => {},
-		PostMachine: () => {},
+		preNoMachine: () => {},
+		postMachine: () => {},
 	}
 
 }

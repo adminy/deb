@@ -1,10 +1,10 @@
 import newChroot from './commands.js'
 
 const debos = {
-	Success: 1,
-	Failure: 0,
-	NewChrootCommandForContext: (...args) => {
-		return debos.Command = newChroot(...args)
+	success: 1,
+	failure: 0,
+	newChrootCommandForContext: (...args) => {
+		return debos.command = newChroot(...args)
 	}
 }
 

@@ -71,7 +71,7 @@ const main = () => {
 	/* If fakemachine is used the outer fake machine will never use the
 		* scratchdir, so just set it to /scratch as a dummy to prevent the
 		* outer debos creating a temporary directory */
-	context.Scratchdir = '/scratch'
+	context.scratchdir = '/scratch'
 
 	let runInFakeMachine = true
 	let m;
@@ -79,7 +79,7 @@ const main = () => {
 		runInFakeMachine = false
 	} else {
 		// attempt to create a fakemachine
-		m = fakemachine.NewMachineWithBackend(options.backend)
+		m = fakemachine.newMachineWithBackend(options.backend)
 		// fallback to running on the host unless the user has chosen a specific backend
 		runInFakeMachine = false
 		if (!m || options.backend != 'auto') return console.error('error creating fakemachine')
@@ -88,90 +88,90 @@ const main = () => {
 	// if running on the host create a scratchdir
 	if (!runInFakeMachine && !process.env.IN_FAKE_MACHINE) {
 		console.warn('fakemachine not supported, running on the host!')
-		context.Scratchdir = tmpdir('.debos-')		
+		context.scratchdir = tmpdir('.debos-')		
 	}
 
-	context.Rootdir = path.join(context.Scratchdir, 'root')
-	context.Image = options.internalImage
-	context.RecipeDir = path.dirname(file)
+	context.rootdir = path.join(context.scratchdir, 'root')
+	context.image = options.internalImage
+	context.recipeDir = path.dirname(file)
 	context.artifactDir = options.artifactDir
 	if (!context.artifactDir) {
 		context.artifactDir = path.resolve(process.cwd())
 	}
 
 	// Initialise origins map
-	context.Origins = {
+	context.origins = {
 		artifacts: context.artifactDir,
-		filesystem: context.Rootdir,
-		recipe: context.RecipeDir
+		filesystem: context.rootdir,
+		recipe: context.recipeDir
 	}
-	context.Architecture = r.Architecture
-	context.State = debos.Success
+	context.architecture = r.architecture
+	context.state = debos.success
 	// Initialize environment variables map
-	context.EnvironVars = {}
+	context.environVars = {}
 	// First add variables from host
 	for (const key in environ_vars) {
 		const lowerKey = key.toLowerCase() // lowercase not really needed
 		const lowerVal = process.env[lowerKey]
 		if (lowerVal) {
-			context.EnvironVars[lowerVar] = lowerVal
+			context.environVars[lowerVar] = lowerVal
 		}
 		const upperKey = key.toUpperCase()
 		const upperVal = process.env[upperKey]
 		if (upperVal) {
-			context.EnvironVars[upperVar] = upperVal
+			context.environVars[upperVar] = upperVal
 		}
 
 	}
 	// Then add/overwrite with variables from command line
-	options.EnvironVars = {...process.env}
-	for (const [k, v] of Object.entries(options.EnvironVars)) {
+	options.environVars = {...process.env}
+	for (const [k, v] of Object.entries(options.environVars)) {
 		// Allows the user to unset environ variables with -e
-		!v && delete context.EnvironVars[k]
+		!v && delete context.environVars[k]
 		if (v) {
-			context.EnvironVars[k] = v
+			context.environVars[k] = v
 		}
 	}
 
-	const everyAction = cb => r.Actions.map(action => cb(action))
+	const everyAction = cb => r.actions.map(action => cb(action))
 
-	everyAction(action => action.Verify(context))
+	everyAction(action => action.verify(context))
 
 	if (options.dryRun) return console.log('==== Recipe done (Dry run) ====')
 	if (runInFakeMachine) {
 		const args = []
-		m.SetMemory(options.memory)
-		m.SetNumCPUs(options.cpus)
-		options.scratchSize && m.SetScratch(options.scratchSize, "")
-		m.SetShowBoot(options.showBoot)
-		// Puts in a format that is compatible with output of os.Environ()
-		const envsExist = Object.keys(context.EnvironVars).length
-		envsExist && m.SetEnviron(Object.entries(context.EnvironVars)
+		m.setMemory(options.memory)
+		m.setNumCPUs(options.cpus)
+		options.scratchSize && m.setScratch(options.scratchSize, "")
+		m.setShowBoot(options.showBoot)
+		// Puts in a format that is compatible with output of os.environ()
+		const envsExist = Object.keys(context.environVars).length
+		envsExist && m.setEnviron(Object.entries(context.environVars)
 			.filter(checkForHost).map(([k, v]) => `${k}="${v}"`).join('\n'))
-		m.AddVolume(context.artifactDir)
+		m.addVolume(context.artifactDir)
 		args.push('--artifactdir', context.artifactDir)
 		for (const [k, v] of Object.entries(options.templateVars)) {
 			args.push('--template-var', `${k}:"${v}"`)
 		}
-		for (const [k, v] of Object.entries(options.EnvironVars)) {
+		for (const [k, v] of Object.entries(options.environVars)) {
 			args.push('--environ-var', `${k}:"${v}"`)
 		}
-		m.AddVolume(context.RecipeDir)
+		m.addVolume(context.recipeDir)
 		args.push(file)
 		options.debugShell && args.push('--debug-shell', '--shell', options.shell)
-		everyAction(action => action.PreMachine(context, m, args))
-		m.RunInMachineWithArgs(args)
-		everyAction(action => action.PostMachine(context))
+		everyAction(action => action.preMachine(context, m, args))
+		m.runInMachineWithArgs(args)
+		everyAction(action => action.postMachine(context))
 		return console.log('==== Recipe done ====')
 	}
 
-	!process.env.IN_FAKE_MACHINE && everyAction(action => action.PreNoMachine(context))
+	!process.env.IN_FAKE_MACHINE && everyAction(action => action.preNoMachine(context))
 
 	// Create Rootdir
-	!fs.existsSync(context.Rootdir) && fs.mkdirSync(context.Rootdir, { mode: 0o755 })
-	everyAction(action => action.Run(context))
+	!fs.existsSync(context.rootdir) && fs.mkdirSync(context.rootdir, { mode: 0o755 })
+	everyAction(action => action.run(context))
 	!process.env.IN_FAKE_MACHINE &&
-		everyAction(action => action.PostMachine(context)) && 
+		everyAction(action => action.postMachine(context)) && 
 		console.log('==== Recipe done ====')
 
 }

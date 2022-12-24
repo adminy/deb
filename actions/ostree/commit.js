@@ -12,30 +12,30 @@ function OstreeCommitAction({
 	const emptyDir = dir => fs.readdirSync(dir).map(file => fs.unlinkSync(path.join(dir, file)))
 	return {
 		emptyDir,
-		Run: context => {
+		run: context => {
 			// LogStart()
 			const repoPath = path.join(context.artifactDir, Repository)		
-			emptyDir(path.join(context.Rootdir, 'dev'))		
-			const repo = otbuiltin.OpenRepo(repoPath)
-			repo.PrepareTransaction()
-			const opts = otbuiltin.NewCommitOptions()
-			opts.Subject = ot.Subject
+			emptyDir(path.join(context.rootdir, 'dev'))		
+			const repo = otbuiltin.openRepo(repoPath)
+			repo.prepareTransaction()
+			const opts = otbuiltin.newCommitOptions()
+			opts.subject = ot.subject
 			for (const key in Metadata) {
-				opts.AddMetadataString.push(`${key}=${Metadata[key]}`)
+				opts.addMetadataString.push(`${key}=${Metadata[key]}`)
 			}
 			if (CollectionID) {
-				opts.CollectionID = CollectionID
+				opts.collectionID = CollectionID
 				// Add current branch if not explitely set via 'ref-binding'
-				!RefBinding && opts.RefBinding.push(Branch)
+				!RefBinding && opts.refBinding.push(Branch)
 			}
 			// Add values from 'ref-binding' if any
-			opts.RefBinding.push(...RefBinding)		
-			const msg = repo.Commit(context.Rootdir, Branch, opts)
+			opts.refBinding.push(...refBinding)		
+			const msg = repo.commit(context.rootdir, Branch, opts)
 			console.log('Commit:', msg)
-			repo.CommitTransaction()
+			repo.commitTransaction()
 		},
-		PreNoMachine: () => {},
-		PostMachine: () => {},
+		preNoMachine: () => {},
+		postMachine: () => {},
 	}
 }
 

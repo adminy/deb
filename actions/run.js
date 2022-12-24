@@ -6,15 +6,15 @@ export default ({Chroot, PostProcess, Script, Command, Label, LogStart}) => {
 	const doRun = context => {
 		// LogStart()
 		const cmdline = []
-		const cmd = Chroot ? debos.NewChrootCommandForContext(context) : debos.Command
+		const cmd = Chroot ? debos.newChrootCommandForContext(context) : debos.command
 		let label = ''
 		if (Script) {
 			const script = Script.split(' ').slice(0, 2)
-			script[0] = path.resolve(context.RecipeDir, script[0])
+			script[0] = path.resolve(context.recipeDir, script[0])
 			if (Chroot) {
 				const scriptpath = path.dirname(script[0])
-				cmd.AddBindMount(scriptpath, '/tmp/script')
-				script[0] = strings.Replace(script[0], scriptpath, '/tmp/script', 1)
+				cmd.addBindMount(scriptpath, '/tmp/script')
+				script[0] = strings.replace(script[0], scriptpath, '/tmp/script', 1)
 			}
 			cmdline.push(script.join(' '))
 			label = path.basename(Script)
@@ -35,34 +35,34 @@ export default ({Chroot, PostProcess, Script, Command, Label, LogStart}) => {
 		// Command/script with options passed as single string
 		cmdline.push('sh', '-c', ...cmdline)
 		if (!Chroot) {
-			cmd.AddEnvKey('RECIPEDIR', context.RecipeDir)
-			cmd.AddEnvKey('ARTIFACTDIR', context.artifactDir)
+			cmd.addEnvKey('RECIPEDIR', context.recipeDir)
+			cmd.addEnvKey('ARTIFACTDIR', context.artifactDir)
 		}
 		if (!PostProcess) {
 			if (!Chroot) {
-				cmd.AddEnvKey("ROOTDIR", context.Rootdir)
-				context.ImageMntDir && cmd.AddEnvKey("IMAGEMNTDIR", context.ImageMntDir)
+				cmd.addEnvKey("ROOTDIR", context.rootdir)
+				context.imageMntDir && cmd.addEnvKey("IMAGEMNTDIR", context.imageMntDir)
 			}
-			context.Image && cmd.AddEnvKey("IMAGE", context.Image)
+			context.image && cmd.addEnvKey("IMAGE", context.image)
 		}
-		return cmd.Run(label, ...cmdline)
+		return cmd.run(label, ...cmdline)
 	}
 	return {
-		Verify: () => {
+		verify: () => {
 			if (PostProcess && Chroot) return console.error("Cannot run postprocessing in the chroot")
 			if (!Script && !Command) return console.error('Script and Command both cannot be empty')
 		},
-		PreMachine: context => {
+		preMachine: context => {
 			if (!Script) return
 			const args = []		
-			debos.CleanPathAt(Script, context.RecipeDir)
+			debos.cleanPathAt(Script, context.recipeDir)
 			// Expect we have no blank spaces in path
 			const [scriptpath] = Script.split(' ')
-			!PostProcess && m.AddVolume(path.dirname(scriptpath))		
+			!PostProcess && m.addVolume(path.dirname(scriptpath))		
 		},
 		doRun,
 		// This runs in postprocessing instead 
-		Run: context => !PostProcess && doRun(context),
-		PostMachine: context => !PostProcess && doRun(context)
+		run: context => !PostProcess && doRun(context),
+		postMachine: context => !PostProcess && doRun(context)
 	}
 }

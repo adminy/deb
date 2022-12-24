@@ -1,20 +1,20 @@
 export default ({Compression, Origin, File, LogStart}) => ({
-	Verify: context => {
+	verify: context => {
 		if (!Origin && !File) return console.error("Filename can't be empty. Please add 'file' and/or 'origin' property.")	
-		const archive = debos.NewArchive(File)
+		const archive = debos.newArchive(File)
 		if (Compression) {
-			if (archive.Type() != debos.Tar) return console.error("Option 'compression' is supported for Tar archives only.")
-			archive.AddOption('tarcompression', pf.Compression)
+			if (archive.type() != debos.tar) return console.error("Option 'compression' is supported for Tar archives only.")
+			archive.addOption('tarcompression', pf.compression)
 		}
 	},
-	Run: context => {
+	run: context => {
 		// LogStart()
-		const origin = Origin && context.Origin(Origin) || context.artifactDir	
-		const infile = debos.RestrictedPath(origin, File)
-		const archive = debos.NewArchive(infile)
-		Compression && archive.AddOption('tarcompression', Compression)	
-		return archive.Unpack(context.Rootdir)
+		const origin = Origin && context.origin(Origin) || context.artifactDir	
+		const infile = debos.restrictedPath(origin, File)
+		const archive = debos.newArchive(infile)
+		Compression && archive.addOption('tarcompression', Compression)	
+		return archive.unpack(context.rootdir)
 	},
-	PreNoMachine: () => {},
-	PostMachine: () => {},
+	preNoMachine: () => {},
+	postMachine: () => {},
 })

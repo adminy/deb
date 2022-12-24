@@ -2,41 +2,42 @@ import fs from 'fs'
 import path from 'path'
 
 export default function NewFilesystemDeployAction({
-	SetupFSTab=true, // yml['setup-fstab']
-	SetupKernelCmdline=true, // yml['setup-kernel-cmdline']
-	AppendKernelCmdline, //yml['append-kernel-cmdline']
-	Description='Deploying filesystem',
-	LogStart
+	setupFSTab=true, // yml['setup-fstab']
+	setupKernelCmdline=true, // yml['setup-kernel-cmdline']
+	appendKernelCmdline, //yml['append-kernel-cmdline']
+	description='Deploying filesystem',
+	logStart
 }) {
-	const setupFSTab = context => {
-		if (!context.ImageFSTab) return console.error('Fstab not generated, missing image-partition action?')
+	const setupFSTabFn = context => {
+		if (!context.imageFSTab) return console.error('Fstab not generated, missing image-partition action?')
 		console.log('Setting up fstab')
-		fs.mkdirSync(path.join(context.Rootdir, 'etc'), {mode: 0o755})
-		const fstab = path.join(context.Rootdir, 'etc', 'fstab')
-		fs.writeFileSync(fstab, context.ImageFSTab)
+		fs.mkdirSync(path.join(context.rootdir, 'etc'), {mode: 0o755})
+		const fstab = path.join(context.rootdir, 'etc', 'fstab')
+		fs.writeFileSync(fstab, context.imageFSTab)
 	}
-	const setupKernelCmdline = context => {
+	const setupKernelCmdlineFn = context => {
 		console.log('Setting up /etc/kernel/cmdline')
-		const kernelDir = path.join(context.Rootdir, 'etc', 'kernel')
+		const kernelDir = path.join(context.rootdir, 'etc', 'kernel')
 		fs.mkdirSync(kernelDir, {mode: 0o755})
 		const cmdlineFile = fs.readdirSync(path.join(kernelDir, 'cmdline')).toString().trim()
-		const cmdline = `${cmdlineFile} ${context.ImageKernelRoot} ${AppendKernelCmdline || ''}`
+		const cmdline = `${cmdlineFile} ${context.imageKernelRoot} ${appendKernelCmdline || ''}`
 		fs.writeFileSync(path.join(kernelDir, 'cmdline'), cmdline)
 	}
 	return {
-		setupFSTab,
-        setupKernelCmdline,
-		Run: context => {
-			// LogStart()
+		setupFSTab: setupFSTabFn,
+        setupKernelCmdline: setupKernelCmdlineFn,
+		run: context => {
+			// logStart()
 			// Copying files is actually silly hafd, one has to keep permissions, ACL's
 			// extended attribute, misc, other. Leave it to cp...
-			debos.Command.Run('Deploy to image', 'cp', '-a', context.Rootdir+'/.', context.ImageMntDir)
-			context.Rootdir = context.ImageMntDir
-			context.Origins.filesystem = context.ImageMntDir
-			SetupFSTab && setupFSTab(context)
-			SetupKernelCmdline && setupKernelCmdline(context)
+			debos.command.run('Deploy to image', 'cp', '-a', context.rootdir+'/.', context.imageMntDir)
+			context.rootdir = context.imageMntDir
+			context.origins.filesystem = context.imageMntDir
+			setupFSTab && setupFSTabFn(context)
+			setupKernelCmdline && setupKernelCmdlineFn(context)
 		},
-		PreNoMachine: () => {},
-		PostMachine: () => {},
+		preNoMachine: () => {},
+		postMachine: () => {},
+		verify: () => {},
 	}
 }

@@ -10,24 +10,24 @@ const tarOpts = {
 function NewPackAction({Compression='gz', File='', LogStart}) {
 	return {
 		Compression, File,
-		Verify: () => {
-			const compressionAvailable = tarOpts[d.Compression]
+		verify: () => {
+			const compressionAvailable = tarOpts[d.compression]
 			if (compressionAvailable) return
 			return console.error(`Option
-				'compression' has an unsupported type: ${d.Compression}.
+				'compression' has an unsupported type: ${d.compression}.
 				Possible types are ${Object.keys(tarOpts).join(', ')}`)	
 		},
-		Run: context => {
+		run: context => {
 				// LogStart()
 				const outfile = path.join(context.artifactDir, File)			
 				const tarOpt = 'cf' + tarOpts[Compression]
 				console.log('Compressing to', outfile)
-				return debos.Command.Run('Packing', 'tar', tarOpt, outfile,
+				return debos.command.run('Packing', 'tar', tarOpt, outfile,
 					'--xattrs', '--xattrs-include=*.*',
-					'-C', context.Rootdir, '.')
+					'-C', context.rootdir, '.')
 		},
-		PreNoMachine: () => {},
-		PostMachine: () => {},
+		preNoMachine: () => {},
+		postMachine: () => {},
 	}
 }
 

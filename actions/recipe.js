@@ -1,46 +1,47 @@
 import path from 'path'
 import Parse from './index.js'
 export default recipe => {
-	var {recipe, Variables, Actions, templateVars, LogStart} = recipe
+	var {recipe, variables} = recipe
 	return {
-		Verify: context => {
+		verify: context => {
 			if (!recipe) return console.error('"recipe" property can\'t be empty')
-			// recipe.context = context
 			let file = recipe
-			console.log('file', file, 'what about the main file?') // TODO ...
-			if (path.isAbsolute(file)) {
-				file = path.join(context.recipeDir, recipe)
-			}
+			file = path.join(context.recipeDir, recipe)
 			context.recipeDir = path.dirname(file)
 
 			// Initialise template vars
-			// recipe.templateVars = {}
-			// recipe.templateVars.architecture = context.Architecture
-		
+			const templateVars = {}
+			templateVars.architecture = context.architecture
+
+
+			recipe = {...Parse(file, context.printRecipe, context.verbose, templateVars), ...recipe}
+			
+			recipe.context = context
+			recipe.templateVars = templateVars
+
 			// Add Variables to template vars
-			for (const key in Variables) {
-				templateVars[key] = Variables[key]
+			for (const key in variables) {
+				templateVars[key] = variables[key]
 			}
 
-			Parse(file, context.printRecipe, context.verbose, templateVars)
-		
-			if (context.Architecture != Actions.Architecture)
-				return console.error('Expect architecture', context.Architecture, 'but got', Actions.Architecture)
 
-			Actions.Actions.map(action => action.Verify(context))
+			if (context.architecture != recipe.architecture)
+				return console.error('Expect architecture', context.architecture, 'but got', recipe.architecture)
+
+			recipe.actions.map(action => action.verify ? action.verify(context) : console.error('receipe action does not contain "verify" method', action))
 		},
-		PreMachine: (context, m, args) => {
+		preMachine: (context, m, args) => {
 			// TODO: check args?
-			m.AddVolume(context.recipeDir)
-			Actions.Actions.map(action => action.PreMachine(context, m, args))
+			m.addVolume(context.recipeDir)
+			recipe.actions.map(action => action.preMachine(context, m, args))
 		},
-		PreNoMachine: context => Actions.Actions.map(action => action.PreNoMachine(context)),
-		Run: context => {
+		preNoMachine: context => recipe.actions.map(action => action.preNoMachine(context)),
+		run: context => {
 			// LogStart()
-			Actions.Actions.map(action => action.Run(context))
+			recipe.actions.map(action => action.run(context))
 		},
-		Cleanup: context => Actions.Actions.map(action => action.Cleanup(context)),
-		PostMachine: context => Actions.Actions.map(action => action.PostMachine(context)),
-		PostMachineCleanup: context => Actions.Actions.map(action => action.PostMachineCleanup(context))
+		cleanup: context => recipe.actions.map(action => action.cleanup(context)),
+		postMachine: context => recipe.actions.map(action => action.postMachine(context)),
+		postMachineCleanup: context => recipe.actions.map(action => action.postMachineCleanup(context))
 	}
 }
