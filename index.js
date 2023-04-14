@@ -5,6 +5,7 @@ import fs from 'fs'
 import {tmpdir} from 'os'
 import debos from './debos.js'
 import Parse from './actions/index.js'
+import { fileURLToPath } from 'url'
 
 const checkForHost = ([k, v]) => {
 	const isLocal = ['localhost', '127.0.0.1', '::1'].find(ip => v.includes(ip))
@@ -45,7 +46,7 @@ const context = {}
 // they are detected and configured in both lower case and upper case.
 const environ_vars = [ 'http_proxy', 'https_proxy', 'ftp_proxy', 'rsync_proxy', 'all_proxy', 'no_proxy' ]
 
-const main = () => {
+export const main = () => {
 
 	if (!options._.length) return console.error('No recipe given!')
 
@@ -175,4 +176,5 @@ const main = () => {
 		console.log('==== Recipe done ====')
 
 }
-main()
+
+process.argv[1] === fileURLToPath(import.meta.url) && main()
